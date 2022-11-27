@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+  }
+  
+  *{
+    box-sizing: border-box;
+  }
+  
+.UI {
+    margin: 30px auto;
+  }
+
+.tb {
+  margin: 0 0 0 110px;
+  display: inline-block;
+}
+  
