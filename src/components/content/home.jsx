@@ -6,12 +6,13 @@ import { sleep } from '../utils/sleep';
 class Home extends Component {
     state = {
         graph:{},
-        animationStep:300,
+        animationStep:0,
     }
     
     input_start = React.createRef();  
     input_end = React.createRef();
 
+    //启发函数
     cal = (string, end) => {
         let cnt = 0;
         let row_string = 0;
@@ -19,7 +20,7 @@ class Home extends Component {
         let row_end = 0;
         let col_end = 0;
         for(let i=0;i<string.length;i++) {
-            if(string[i]!='X') {
+            if(string[i]!='0') {
                 row_string = Math.floor(i / 4);
                 col_string = i % 4;
                 for(let j=0;j<end.length;j++) {
@@ -34,18 +35,19 @@ class Home extends Component {
         return cnt;
     }
 
+
     async startAlgorithm () {
         const start = this.input_start.current.value;
         const end = this.input_end.current.value;
-        let amount = 0;
-        let cnt_start = 0;
-        let cnt_end = 0;
+        let amount = 0;//加入OPEN表中的总节点数量
+        let cnt_start = 0;//起始状态逆序对数量
+        let cnt_end = 0;//终止状态逆序对数量
         let open = document.getElementById('OPEN');
         let closed = document.getElementById('CLOSED');
 
         let buf = '';
         for(let i=0;i<start.length;i++) {
-            if(start[i]!='X') buf+=start[i];
+            if(start[i]!='0') buf+=start[i];
             else {
                 cnt_start += Math.floor(i/4);
             }
@@ -58,7 +60,7 @@ class Home extends Component {
 
         buf = '';
         for(let i=0;i<end.length;i++) {
-            if(end[i]!='X') buf+=end[i];
+            if(end[i]!='0') buf+=end[i];
             else {
                 cnt_end += Math.floor(i/4);
             }
@@ -89,8 +91,8 @@ class Home extends Component {
         
         let OPEN = [];
         let CLOSED = [];
-        let dist = [];
-        let last = [];
+        let dist = [];//记录当前状态距离起点的距离
+        let last = [];//记录当前状态的由来
 
         for(let i=0;i<4;i++) {
             for(let j=0;j<4;j++) {
@@ -124,10 +126,14 @@ class Home extends Component {
             let cur = OPEN[0];
             OPEN.splice(0,1);
             let state = cur.string;
+
+            //可视化open表移除当前状态
             for(let i=0;i<open.childNodes[1].childNodes.length-1;i++) {
                 open.childNodes[1].childNodes[i].innerHTML = open.childNodes[1].childNodes[i+1].innerHTML;
             }
             open.childNodes[1].childNodes[open.childNodes[1].childNodes.length-1].remove();
+
+            //更新4*4视图
             for(let i=0;i<4;i++) {
                 for(let j=0;j<4;j++) {
                     Data.state.nodes[i*4+j].label = state[i*4+j];
@@ -135,6 +141,7 @@ class Home extends Component {
             }
             this.state.graph.read(Data.state)
             
+            //将当前状态加入closed表并更新视图
             CLOSED.push(cur)
             let closed_length = closed.childNodes[1].childNodes.length;
             closed.childNodes[1].appendChild(document.createElement("tr"))
@@ -146,20 +153,23 @@ class Home extends Component {
             <td>${dist[state]+this.cal(state,end)}</td>`;
 
             await sleep(this.state.animationStep);
-            if(state === end) break;
+            if(state === end) break;//判断是否达到终止状态
 
+
+            //计算空格所在的行与列
             let row_X = 0;
             let col_X = 0;
             for(let i=0;i<state.length;i++) {
-                if(state[i] == 'X') {
+                if(state[i] == '0') {
                     row_X = Math.floor(i / 4);
                     col_X = i % 4;
                     break;
                 }
             }
             
-            let backup = state;
+            let backup = state;//存储当前状态以便多次使用
             for(let i=0 ;i<4;i++) {
+                //判断当前状态是否合法
                 let x = row_X + dx[i];
                 let y = col_X + dy[i];
                 if(x < 0 || x >= 4 || y < 0 || y >= 4) continue;
@@ -170,16 +180,19 @@ class Home extends Component {
                     a = b;
                     b = c;
                 }
-
+                
+                //得到交换操作执行后的状态字符串
                 let ch1 = state[a], ch2 = state[b];
                 let s1 = state.substr(0,a);
                 let s2 = state.substr(a+1);
                 state = s1 + ch2 + s2;
-
                 s1 = state.substr(0,b);
                 s2 = state.substr(b+1);
                 state = s1 + ch1 + s2;
+
+
                 let flag = true;
+                //判断当前节点是否在OPEN表中
                 for(let key in dist) {
                     if(key == state) {
                         flag = false;
@@ -231,6 +244,7 @@ class Home extends Component {
                         break;
                     }
                 }
+                //当前节点未加入过OPEN表中则执行下列操作
                 if(flag){
                     dist[state] = dist[backup] + 1;
                     let distance = dist[state] + this.cal(state,end);
@@ -291,6 +305,7 @@ class Home extends Component {
         alert(`step:${res.length}      op:${ans}`);
     }
 
+    //清空界面与数据
     clear = () => {
         Data.state.nodes.splice(0);
         this.state.graph.read(Data.state)
