@@ -6,7 +6,7 @@ import { sleep } from '../utils/sleep';
 class Home extends Component {
     state = {
         graph:{},
-        animationStep:0,
+        animationStep:300,
     }
     
     input_start = React.createRef();  
